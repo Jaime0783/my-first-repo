@@ -1,1 +1,1 @@
-# my-first-repo
+# my-first-repo안녕하세요! 학생 인증을 위한 테스트 공간입니다.
