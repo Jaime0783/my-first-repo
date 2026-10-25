@@ -80,4 +80,7 @@ globalThis.fetch = realFetch;
 const ics = 'BEGIN:VCALENDAR\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:20260924\r\nDTEND;VALUE=DATE:20260927\r\nSUMMARY:추석\r\nEND:VEVENT\r\nBEGIN:VEVENT\r\nDTSTART;VALUE=DATE:20260508\r\nDTEND;VALUE=DATE:20260509\r\nSUMMARY:어버이날\r\nEND:VEVENT\r\nEND:VCALENDAR';
 assert.deepEqual(parseIcs(ics), { '2026-09-24': '추석', '2026-09-25': '추석', '2026-09-26': '추석' });
 
+const sub = 'BEGIN:VEVENT\r\nDTSTART;VALUE=DATE:20261005\r\nSUMMARY:쉬는 날 개천절\r\nEND:VEVENT';
+assert.deepEqual(parseIcs(sub), { '2026-10-05': '대체공휴일' });
+
 console.log('smoke: all passed');
