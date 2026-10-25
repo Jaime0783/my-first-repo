@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>아이폰 위젯 설정</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/app.css" />
+  <style>
+    body { overflow-y: auto; }
+    .page { max-width: 560px; margin: 0 auto; padding: calc(16px + var(--safe-t)) 16px calc(32px + var(--safe-b)); }
+    .page h1 { font-size: 24px; margin: 8px 0 4px; }
+    .lead { color: var(--muted); margin: 0 0 18px; line-height: 1.5; }
+    ol.steps { padding-left: 20px; line-height: 1.6; }
+    ol.steps li { margin-bottom: 12px; }
+    .card { background: var(--surface); border-radius: 14px; padding: 16px; margin: 14px 0; border: 1px solid var(--line); }
+    .sizes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; }
+    .sizes b { display: block; }
+    .sizes span { color: var(--muted); font-size: 13px; }
+    code { background: var(--line); padding: 1px 6px; border-radius: 5px; }
+    .page a { color: var(--accent); }
+    .back { color: var(--accent); text-decoration: none; font-weight: 600; }
+    #status { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a class="back" href="/">‹ 캘린더</a>
+    <h1>아이폰 위젯</h1>
+    <p class="lead">무료 앱 Scriptable로 홈 화면과 잠금 화면에 캘린더 위젯을 놓습니다. 위젯은 이 캘린더와 같은 Notion 데이터를 30분마다 새로 받습니다.</p>
+
+    <div class="card sizes">
+      <div><b>큰 위젯</b><span>월력 (앱과 같은 배치)</span></div>
+      <div><b>중간 위젯</b><span>오늘 + 다가오는 일정 4개</span></div>
+      <div><b>작은 위젯</b><span>오늘 + 일정 3개</span></div>
+      <div><b>잠금 화면</b><span>다음 일정</span></div>
+    </div>
+
+    <ol class="steps">
+      <li><a href="https://apps.apple.com/app/scriptable/id1405459188" target="_blank" rel="noopener">Scriptable</a>을 설치합니다.</li>
+      <li>아래 버튼으로 위젯 스크립트를 복사합니다. 이 캘린더 주소와 암호가 들어 있습니다.
+        <button class="btn" id="copy">스크립트 복사</button>
+        <div id="status"></div>
+      </li>
+      <li>Scriptable을 열고 오른쪽 위 <b>+</b>를 눌러 붙여넣은 뒤, 위쪽 제목을 <code>Notion 캘린더</code>로 바꾸고 <b>Done</b>을 누릅니다.</li>
+      <li>스크립트를 한 번 눌러 실행하면 미리보기가 나옵니다. 일정이 보이면 정상입니다.</li>
+      <li>홈 화면을 길게 눌러 <b>편집 → 위젯 추가 → Scriptable</b>에서 원하는 크기를 고르고, 위젯을 길게 눌러 <b>위젯 편집 → Script</b>를 <code>Notion 캘린더</code>로 지정합니다.</li>
+      <li>큰 위젯 색을 고정하려면 같은 화면의 <b>Parameter</b>에 <code>dark</code> 또는 <code>light</code>를 넣습니다. 비워 두면 기기 설정을 따릅니다.</li>
+    </ol>
+    <p class="lead">중간, 작은 위젯의 일정을 누르면 캘린더가 그 날짜로 열립니다. 위젯은 iOS가 정한 주기로 갱신되므로 몇 분 늦게 반영될 수 있습니다.</p>
+  </div>
+  <script type="module">
+    const status = document.getElementById('status');
+    let pass = '';
+    try { pass = localStorage.getItem('passcode') || ''; } catch {}
+
+    async function needsPass() {
+      const r = await fetch('/api/meta', { headers: pass ? { 'x-app-passcode': pass } : {} });
+      return r.status === 401;
+    }
+
+    async function buildScript() {
+      if (await needsPass()) {
+        pass = prompt('캘린더 암호를 입력하세요') || '';
+        if (!pass || await needsPass()) throw new Error('암호가 맞지 않습니다');
+        try { localStorage.setItem('passcode', pass); } catch {}
+      }
+      const src = await (await fetch('/widget/notion-calendar.js', { cache: 'no-store' })).text();
+      return src.replace("'__BASE_URL__'", JSON.stringify(location.origin).replace(/"/g, "'"))
+                .replace("'__PASSCODE__'", JSON.stringify(pass).replace(/"/g, "'"));
+    }
+
+    // 로드 시 미리 만들어 두어야 iOS Safari 가 클릭 즉시 복사를 허용한다
+    let ready = null;
+    needsPass().then(async (np) => { if (!np) ready = await buildScript(); }).catch(() => {});
+
+    async function copyText(text) {
+      try { await navigator.clipboard.writeText(text); return; } catch {}
+      const ta = Object.assign(document.createElement('textarea'), { value: text, readOnly: true });
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy'); ta.remove();
+      if (!ok) throw new Error('복사하지 못했습니다. 다시 눌러 주세요.');
+    }
+
+    document.getElementById('copy').onclick = async () => {
+      try {
+        const text = ready || (ready = await buildScript());
+        await copyText(text);
+        status.textContent = `복사했습니다 (${text.length.toLocaleString()}자). Scriptable에 붙여넣으세요.`;
+      } catch (e) { status.textContent = e.message; }
+    };
+  </script>
+</body>
+</html>

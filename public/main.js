@@ -369,7 +369,8 @@ function openMonthPicker() {
   const draw = () => openSheet(`
     <div class="yearbar"><button id="py">‹</button><span>${y}년</span><button id="ny">›</button></div>
     <div class="months">${Array.from({ length: 12 }, (_, i) => `<button data-m="${i}" class="${y === state.y && i === state.m ? 'on' : ''}">${i + 1}월</button>`).join('')}</div>
-    <button class="btn ghost" id="goToday">오늘</button>`, (root) => {
+    <button class="btn ghost" id="goToday">오늘</button>
+    <a class="btn ghost" href="/widget.html" style="text-decoration:none">아이폰 위젯 설정</a>`, (root) => {
     root.querySelector('#py').onclick = () => { y--; draw(); };
     root.querySelector('#ny').onclick = () => { y++; draw(); };
     root.querySelector('#goToday').onclick = () => { closeSheet(); goToday(); };
@@ -476,5 +477,14 @@ document.addEventListener('visibilitychange', () => {
     $('#demoBadge').hidden = !state.meta.demo;
     document.title = state.meta.title || document.title;
   } catch (e) { toast(e.message); }
-  show(state.y, state.m);
+  // 위젯에서 열린 경우: /?date=YYYY-MM-DD 로 해당 날짜를 바로 연다
+  const target = new URLSearchParams(location.search).get('date');
+  if (target && /^\d{4}-\d{2}-\d{2}$/.test(target)) {
+    history.replaceState(null, '', '/');
+    const d = parseYmd(target);
+    await show(d.getFullYear(), d.getMonth());
+    openDay(target);
+  } else {
+    show(state.y, state.m);
+  }
 })();
