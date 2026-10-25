@@ -41,10 +41,10 @@ npm test               # 네트워크 없이 API 점검
 
 ## 구조
 ```
-public/      화면 (index.html, app.js, app.css)
+public/      화면 (index.html, main.js, app.css)
 lib/         notion.js(Notion API 2025-09-03, data source), holidays.js, router.js, demo.js
 api/index.js Vercel 함수
-server.js    로컬 서버 (의존성 없음)
+dev-server.js 로컬 서버 (의존성 없음)
 ```
 
 ## 공휴일

@@ -5,9 +5,9 @@
   "description": "Notion 데이터베이스 기반 월력 캘린더",
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js",
+    "dev": "node dev-server.js",
+    "start": "node dev-server.js",
     "test": "node test/smoke.js"
   },
-  "engines": { "node": ">=18" }
+  "engines": { "node": "22.x" }
 }
